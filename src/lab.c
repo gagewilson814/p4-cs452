@@ -50,8 +50,9 @@ queue_t queue_init(int capacity) {
 }
 
 void queue_destroy(queue_t q) {
-  if (!q)
+  if (!q) {
     return;
+  }
 
   pthread_mutex_lock(&q->lock);
   // Optionally ensure no threads remain blocked
