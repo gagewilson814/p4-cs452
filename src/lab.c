@@ -55,9 +55,23 @@ void queue_destroy(queue_t q) {
   }
 
   pthread_mutex_lock(&q->lock);
-  // Optionally ensure no threads remain blocked
+
+  // Signal shutdown to all threads
+  q->shutdown = true;
+
+  // Wake all waiting threads to allow them to exit
+  pthread_cond_broadcast(&q->not_empty);
+  pthread_cond_broadcast(&q->not_full);
+
+  // Wait until the queue is empty (all threads have exited)
+  while (q->size > 0) {
+    pthread_mutex_unlock(&q->lock); // Avoid deadlock if threads need to process
+    pthread_mutex_lock(&q->lock);
+  }
+
   pthread_mutex_unlock(&q->lock);
 
+  // Destroy synchronization primitives
   pthread_cond_destroy(&q->not_empty);
   pthread_cond_destroy(&q->not_full);
   pthread_mutex_destroy(&q->lock);
